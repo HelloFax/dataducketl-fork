@@ -34,7 +34,7 @@ module DataDuck
 
     def connection
       @redshift_connection ||= Sequel.connect("redshift://#{ self.username }:#{ self.password }@#{ self.host }:#{ self.port }/#{ self.database }" +
-              "?force_standard_strings=f",
+              "?force_standard_strings=f&search_path=#{ self.schema }",
           :client_min_messages => '',
           :force_standard_strings => false
       )
@@ -55,7 +55,7 @@ module DataDuck
     def create_columns_on_data_warehouse!(table)
       columns = get_columns_in_data_warehouse(table.building_name)
       column_names = columns.map { |col| col[:name].to_s }
-      table.output_schema.map do |name, data_type|
+      table.create_schema.map do |name, data_type|
         if !column_names.include?(name.to_s)
           redshift_data_type = self.type_to_redshift_type(data_type)
           self.query("ALTER TABLE #{ table.building_name } ADD #{ name } #{ redshift_data_type }")
@@ -65,7 +65,7 @@ module DataDuck
 
     def create_table_query(table, table_name = nil)
       table_name ||= table.name
-      props_array = table.output_schema.map do |name, data_type|
+      props_array = table.create_schema.map do |name, data_type|
         redshift_data_type = self.type_to_redshift_type(data_type)
         "\"#{ name }\" #{ redshift_data_type }"
       end
@@ -222,7 +222,8 @@ module DataDuck
     end
 
     def table_names
-      self.query("SELECT DISTINCT(tablename) AS name FROM pg_table_def WHERE schemaname='public' ORDER BY name").map { |item| item[:name] }
+      # See: http://stackoverflow.com/a/5062773
+      self.query("SELECT DISTINCT(tablename) AS name FROM pg_table_def WHERE schemaname = ANY (CURRENT_SCHEMAS(false)) ORDER BY name").map { |item| item[:name] }
     end
 
     def upload_table_to_s3!(table)
@@ -271,7 +272,7 @@ module DataDuck
 
       recreating_temp_name = "zz_dataduck_recreating_#{ table.name }"
       self.create_output_table_with_name!(table, recreating_temp_name)
-      self.query("INSERT INTO #{ recreating_temp_name } (\"#{ table.output_column_names.join('","') }\") SELECT \"#{ table.output_column_names.join('","') }\" FROM #{ table.name }")
+      self.query("INSERT INTO #{ recreating_temp_name } (\"#{ table.create_column_names.join('","') }\") SELECT \"#{ table.create_column_names.join('","') }\" FROM #{ table.name }")
       self.query("ALTER TABLE #{ table.name } RENAME TO zz_dataduck_recreating_old_#{ table.name }")
       self.query("ALTER TABLE #{ recreating_temp_name } RENAME TO #{ table.name }")
       self.query("DROP TABLE zz_dataduck_recreating_old_#{ table.name }")
@@ -290,7 +291,7 @@ module DataDuck
         from_value = value.respond_to?(:utc) ? value.utc : value
         string_value =  from_value.strftime('%Y-%m-%d %H:%M:%S')
       elsif value.respond_to?(:to_s)
-        string_value = value.to_s
+        string_value = value.to_s.scan(/[[:print:]]/).join
       end
 
       string_value.gsub!('"', '""')
@@ -299,3 +300,4 @@ module DataDuck
     end
   end
 end
+

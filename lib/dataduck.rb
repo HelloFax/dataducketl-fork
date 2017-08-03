@@ -1,4 +1,5 @@
 require 'dotenv'
+require 'logger'
 Dotenv.load
 
 require 'yaml'
@@ -31,7 +32,7 @@ module DataDuck
   detect_project_root = Dir.getwd
   while true
     if detect_project_root == ""
-      raise Exception.new("Could not find a Gemfile in the current working directory or any parent directories. Are you sure you're running this from the right place?")
+      raise "Could not find a Gemfile in the current working directory or any parent directories. Are you sure you're running this from the right place?"
     end
 
     if File.exist?(detect_project_root + '/Gemfile')
@@ -55,6 +56,7 @@ module DataDuck
 
   create_module_var("sources", {})
   create_module_var("destinations", {})
+  create_module_var("logger", Logger.new(STDOUT))
 
   DataDuck::Source.load_config!
   DataDuck::Destination.load_config!
@@ -65,3 +67,8 @@ module DataDuck
     require file
   end
 end
+
+def puts(str)
+  DataDuck.logger.info(str) # puts => Logger (adds process ID)
+end
+

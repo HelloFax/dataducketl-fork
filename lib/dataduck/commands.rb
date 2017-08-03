@@ -33,7 +33,7 @@ module DataDuck
     end
 
     def self.acceptable_commands
-      ['c', 'console', 'd', 'dbconsole', 'etl', 'quickstart', 'recreate', 'show']
+      ['c', 'console', 'd', 'dbconsole', 'etl', 'quickstart', 'recreate', 'show', 'test']
     end
 
     def self.route_command(args)
@@ -93,13 +93,20 @@ module DataDuck
       which_database.dbconsole
     end
 
+    def self.test(*table_names_underscore)
+      # NOTE:
+      DataDuck::Destination.only_destination.schema = "test"
+      self.etl(table_names_underscore)
+    end
+
     def self.etl(*table_names_underscore)
       if table_names_underscore.length == 0
-        puts "You need to specify a table name or 'all'. Usage: dataduck etl all OR datduck etl my_table_name"
+        puts "You need to specify a table name or 'all'. Usage: dataduck etl all OR dataduck etl my_table_name"
         return
       end
 
       only_destination = DataDuck::Destination.only_destination
+      source_directory = only_destination.schema == "test" ? "test_tables" : "tables"
 
       if table_names_underscore.length == 1 && table_names_underscore[0] == "all"
         etl = ETL.new(destinations: [only_destination], autoload_tables: true)
@@ -108,7 +115,7 @@ module DataDuck
         tables = []
         table_names_underscore.each do |table_name|
           table_name_camelized = DataDuck::Util.underscore_to_camelcase(table_name)
-          require DataDuck.project_root + "/src/tables/#{ table_name }.rb"
+          require DataDuck.project_root + "/src/#{ source_directory }/#{ table_name }.rb"
           table_class = Object.const_get(table_name_camelized)
           if !(table_class <= DataDuck::Table)
             raise Exception.new("Table class #{ table_name_camelized } must inherit from DataDuck::Table")

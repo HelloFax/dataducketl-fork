@@ -45,12 +45,15 @@ module DataDuck
       end
 
       errored_tables = []
+      redshift = destinations_to_use[0]
 
       @tables.each do |table_or_class|
         table = table_or_class.kind_of?(DataDuck::Table) ? table_or_class : table_or_class.new
         Logs.info("Processing table '#{ table.name }'...")
         begin
-          table.etl!(destinations_to_use)
+          last_row = redshift.query("INSERT INTO etl_event_log (name, event, timestamp_start) VALUES ('#{ table.name }', 'load_table', CURRENT_TIMESTAMP); SELECT id, timestamp_start FROM etl_event_log WHERE name = '#{ table.name }' ORDER BY id DESC LIMIT 1")[0] # Added to gem per BI-560
+	        table.etl!(destinations_to_use)
+	        redshift.query("UPDATE etl_event_log SET timestamp_end = CURRENT_TIMESTAMP, runtime_in_s = EXTRACT(EPOCH FROM (CURRENT_TIMESTAMP - '#{ last_row[:timestamp_start] }')) WHERE id = #{ last_row[:id] }") # Added to gem per BI-560
         rescue Exception => err
           Logs.error("Error while processing table '#{ table.name }': #{ err.to_s }\n#{ err.backtrace.join("\n") }")
           errored_tables << table

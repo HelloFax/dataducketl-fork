@@ -137,11 +137,12 @@ module DataDuck
 
       extract_part = ""
       limit_part = self.limit_clause
+      building_name = self.building_name_override || self.building_name
 
       if self.extract_by_column
-        if destination.table_names.include?(self.building_name)
+        if destination.table_names.include?(building_name)
           extract_by_column_without_table = self.extract_by_column.include?(".") ? self.extract_by_column.split(".").last : self.extract_by_column
-          extract_by_value = destination.query("SELECT MAX(#{ extract_by_column_without_table }) AS val FROM #{ self.building_name }").first
+          extract_by_value = destination.query("SELECT MAX(#{ extract_by_column_without_table }) AS val FROM #{ building_name }").first
           extract_by_value = extract_by_value.nil? ? nil : extract_by_value[:val]
 
           extract_part = self.extract_by_clause(extract_by_value)
@@ -206,12 +207,32 @@ module DataDuck
       false # Set to true if you want to fully reload a table with each ETL
     end
 
+    def autogenerate_identity?
+      true
+    end
+
     def building_name
       self.should_fully_reload? ? self.staging_name : self.name
     end
 
+    def building_name_override
+      nil
+    end
+
     def staging_name
       "zz_dataduck_#{ self.name }"
+    end
+
+    def create_schema
+      if self.autogenerate_identity?
+        Util.deep_merge(output_schema, {redshift_id: 'bigint identity(1, 1)'}) # Redshift only
+      else
+        output_schema
+      end
+    end
+
+    def create_column_names
+      self.create_schema.keys.map(&:to_s).sort
     end
 
     def output_schema
@@ -219,7 +240,7 @@ module DataDuck
     end
 
     def output_column_names
-      self.output_schema.keys.sort.map(&:to_s)
+      self.output_schema.keys.map(&:to_s).sort
     end
 
     def postprocess!(destination, options = {})
@@ -278,3 +299,4 @@ module DataDuck
     end
   end
 end
+
