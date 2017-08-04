@@ -57,6 +57,7 @@ module DataDuck
         message = message.gsub(/AWS_ACCESS_KEY_ID=[^';]+/, "AWS_ACCESS_KEY_ID=******")
         message = message.gsub(/aws_secret_access_key=[^';]+/, "aws_secret_access_key=******")
         message = message.gsub(/AWS_SECRET_ACCESS_KEY=[^';]+/, "AWS_SECRET_ACCESS_KEY=******")
+        message = message.gsub("\n", '') # Remove newlines for elk
         message
       end
   end
