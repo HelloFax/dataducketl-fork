@@ -11,6 +11,8 @@ module DataDuck
     attr_accessor :data
     attr_accessor :errors
 
+    attr_accessor :is_postgres
+
     def self.transforms(transformation_name)
       self.actions ||= []
       self.actions << [:transform, transformation_name]
@@ -211,6 +213,10 @@ module DataDuck
       true
     end
 
+    def is_postgres?
+      self.is_postgres
+    end
+
     def building_name
       self.should_fully_reload? ? self.staging_name : self.name
     end
@@ -225,7 +231,11 @@ module DataDuck
 
     def create_schema
       if self.autogenerate_identity?
-        Util.deep_merge(output_schema, {redshift_id: 'bigint identity(1, 1)'}) # Redshift only
+        if self.is_postgres?
+          Util.deep_merge(output_schema, {redshift_id: 'SERIAL'}) # Postgres acting as redshift for etl testing
+        else
+          Util.deep_merge(output_schema, {redshift_id: 'bigint identity(1, 1)'}) # Redshift only
+        end
       else
         output_schema
       end
