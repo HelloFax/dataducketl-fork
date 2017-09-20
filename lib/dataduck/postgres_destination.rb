@@ -212,7 +212,7 @@ module DataDuck
     end
 
     def table_names
-      self.query("SELECT DISTINCT(tablen_ame) AS name FROM information_schema.columns WHERE table_schema='public' ORDER BY name").map { |item| item[:name] }
+      self.query("SELECT DISTINCT(table_name) AS name FROM information_schema.columns WHERE table_schema='public' ORDER BY name").map { |item| item[:name] }
     end
 
     def upload_table_to_s3!(table)
