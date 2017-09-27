@@ -219,7 +219,7 @@ module DataDuck
 
       table_csv = self.data_as_csv_string(table.data, table.output_column_names)
 
-      file = new File.new(filepath, "w")
+      file = File.new(filepath, "w")
       file.write(table_csv)
       file.close
 
