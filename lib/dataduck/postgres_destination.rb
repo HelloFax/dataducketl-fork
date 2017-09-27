@@ -32,13 +32,11 @@ module DataDuck
       )
     end
 
-    def copy_query(table, s3_path)
+    def copy_query(table, path)
       properties_joined_string = "\"#{ table.output_column_names.join('","') }\""
       query_fragments = []
       query_fragments << "COPY #{ table.staging_name } (#{ properties_joined_string })"
-      query_fragments << "FROM '#{ s3_path }'"
-      query_fragments << "CREDENTIALS 'aws_access_key_id=#{ self.aws_key };aws_secret_access_key=#{ self.aws_secret }'"
-      query_fragments << "REGION '#{ self.s3_region }'"
+      query_fragments << "FROM '#{ path }'"
       query_fragments << "CSV IGNOREHEADER 1 TRUNCATECOLUMNS ACCEPTINVCHARS EMPTYASNULL"
       query_fragments << "DATEFORMAT 'auto'"
       return query_fragments.join(" ")
@@ -215,16 +213,18 @@ module DataDuck
       self.query("SELECT DISTINCT(table_name) AS name FROM information_schema.columns WHERE table_schema='public' ORDER BY name").map { |item| item[:name] }
     end
 
-    def upload_table_to_s3!(table)
+    def save_table_to_csv(table)
       now_epoch = Time.now.to_i.to_s
-      filepath = "pending/#{ table.name.downcase }_#{ now_epoch }.csv"
+      filepath = "/tmp/#{ table.name.downcase }_#{ now_epoch }.csv"
 
       table_csv = self.data_as_csv_string(table.data, table.output_column_names)
 
-      s3_obj = S3Object.new(filepath, table_csv, self.aws_key, self.aws_secret,
-          self.s3_bucket, self.s3_region)
-      s3_obj.upload!
-      return s3_obj
+      file = new File.new(filepath, "w")
+      file.write(table_csv)
+      file.close
+
+      file.getPath()
+
     end
 
     def finish_fully_reloading_table!(table)
@@ -241,10 +241,9 @@ module DataDuck
 
     def load_table!(table)
       DataDuck::Logs.info "Loading table #{ table.name }..."
-      s3_object = self.upload_table_to_s3!(table)
+      file_path = self.save_table_to_csv(table)
       self.create_output_tables!(table)
-      self.query(self.copy_query(table, s3_object.s3_path))
-      s3_object.delete!
+      self.query(self.copy_query(table, file_path))
 
       if table.staging_name != table.building_name
         self.merge_from_staging!(table)
