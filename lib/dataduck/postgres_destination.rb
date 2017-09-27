@@ -56,15 +56,14 @@ module DataDuck
     def create_table_query(table, table_name = nil)
       table_name ||= table.name
       props_array = table.output_schema.map do |name, data_type|
-        redshift_data_type = self.type_to_redshift_type(data_type)
+        redshift_data_type = data_type
         "\"#{ name }\" #{ redshift_data_type }"
       end
       props_string = props_array.join(', ')
 
-      distribution_clause = table.distribution_key ? "DISTKEY(#{ table.distribution_key })" : ""
       index_clause = table.indexes.length > 0 ? "INTERLEAVED SORTKEY (#{ table.indexes.join(',') })" : ""
 
-      "CREATE TABLE IF NOT EXISTS #{ table_name } (#{ props_string }) #{ distribution_clause } #{ index_clause }"
+      "CREATE TABLE IF NOT EXISTS #{ table_name } (#{ props_string })"
     end
 
     def create_output_tables!(table)
@@ -223,7 +222,7 @@ module DataDuck
       file.write(table_csv)
       file.close
 
-      file.getPath()
+      filepath
 
     end
 
@@ -288,3 +287,4 @@ module DataDuck
     end
   end
 end
+
