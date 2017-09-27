@@ -47,8 +47,7 @@ module DataDuck
       column_names = columns.map { |col| col[:name].to_s }
       table.output_schema.map do |name, data_type|
         if !column_names.include?(name.to_s)
-          redshift_data_type = self.type_to_redshift_type(data_type)
-          self.query("ALTER TABLE #{ table.building_name } ADD #{ name } #{ redshift_data_type }")
+          self.query("ALTER TABLE #{ table.building_name } ADD #{ name } #{ data_type }")
         end
       end
     end
