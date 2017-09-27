@@ -39,7 +39,7 @@ module DataDuck
       query_fragments << "FROM '#{ path }'"
       # query_fragments << "CSV IGNOREHEADER 1 TRUNCATECOLUMNS ACCEPTINVCHARS EMPTYASNULL"
       query_fragments << "CSV"
-      query_fragments << "DATEFORMAT 'auto'"
+      # query_fragments << "DATEFORMAT 'auto'"
       return query_fragments.join(" ")
     end
 
