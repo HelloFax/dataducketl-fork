@@ -47,7 +47,8 @@ module DataDuck
       column_names = columns.map { |col| col[:name].to_s }
       table.output_schema.map do |name, data_type|
         if !column_names.include?(name.to_s)
-          self.query("ALTER TABLE #{ table.building_name } ADD #{ name } #{ data_type }")
+          redshift_data_type = self.type_to_postgres_type(data_type)
+          self.query("ALTER TABLE #{ table.building_name } ADD #{ name } #{ redshift_data_type }")
         end
       end
     end
@@ -55,11 +56,10 @@ module DataDuck
     def create_table_query(table, table_name = nil)
       table_name ||= table.name
       props_array = table.output_schema.map do |name, data_type|
-        "\"#{ name }\" #{ data_type }"
+        redshift_data_type = self.type_to_postgres_type(data_type)
+        "\"#{ name }\" #{ redshift_data_type }"
       end
       props_string = props_array.join(', ')
-
-      index_clause = table.indexes.length > 0 ? "INTERLEAVED SORTKEY (#{ table.indexes.join(',') })" : ""
 
       "CREATE TABLE IF NOT EXISTS #{ table_name } (#{ props_string })"
     end
@@ -109,14 +109,15 @@ module DataDuck
       return data_string_components.join
     end
 
-    def type_to_redshift_type(which_type)
+    def type_to_postgres_type(which_type)
       which_type = which_type.to_s
 
       if ["string", "text", "bigtext"].include?(which_type)
         {
             "string" => "varchar(255)",
             "text" => "varchar(8191)",
-            "bigtext" => "varchar(65535)", # Redshift maximum
+            "bigtext" => "varchar(65535)",
+            "datetime" => "timestamp"
         }[which_type]
       else
         which_type
