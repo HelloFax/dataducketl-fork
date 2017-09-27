@@ -55,8 +55,7 @@ module DataDuck
     def create_table_query(table, table_name = nil)
       table_name ||= table.name
       props_array = table.output_schema.map do |name, data_type|
-        redshift_data_type = data_type
-        "\"#{ name }\" #{ redshift_data_type }"
+        "\"#{ name }\" #{ data_type }"
       end
       props_string = props_array.join(', ')
 
