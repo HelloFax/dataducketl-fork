@@ -112,7 +112,7 @@ module DataDuck
     def type_to_postgres_type(which_type)
       which_type = which_type.to_s
 
-      if ["string", "text", "bigtext"].include?(which_type)
+      if ["string", "text", "bigtext", "datetime"].include?(which_type)
         {
             "string" => "varchar(255)",
             "text" => "varchar(8191)",
