@@ -84,12 +84,10 @@ module DataDuck
       rows = [] # join strings this way for now, could be optimized later
 
       rows << property_names.join(',') # header column
-      rows << "\n"
 
       data.each do |result|
         fields = []
         property_names.each_with_index do |property_name|
-          Logs.debug("checking cols: " + property_name + " " + @column_type_map[property_name])
           quoted = @column_type_map[property_name] != "integer"
           value = result[property_name.to_sym]
           if value.nil?
@@ -241,9 +239,8 @@ module DataDuck
     def create_column_map(table)
       @column_type_map = {}
       table.output_schema.map do |name, data_type|
-        @column_type_map[name] = data_type
+        @column_type_map["#{name}"] = "#{data_type}"
       end
-
     end
 
     def load_table!(table)
