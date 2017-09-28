@@ -23,7 +23,7 @@ module DataDuck
 
       @postgres_connection = nil
 
-      @column_type_match = {}
+      @column_type_map = {}
       super
     end
 
@@ -45,11 +45,9 @@ module DataDuck
     end
 
     def create_columns_on_data_warehouse!(table)
-      @column_type_match = {}
       columns = get_columns_in_data_warehouse(table.building_name)
       column_names = columns.map { |col| col[:name].to_s }
       table.output_schema.map do |name, data_type|
-        @column_type_match[name] = data_type
         if !column_names.include?(name.to_s)
           postgres_data_type = self.type_to_postgres_type(data_type)
           self.query("ALTER TABLE #{ table.building_name } ADD #{ name } #{ postgres_data_type }")
@@ -58,12 +56,8 @@ module DataDuck
     end
 
     def create_table_query(table, table_name = nil)
-      @column_type_match = {}
       table_name ||= table.name
       props_array = table.output_schema.map do |name, data_type|
-        @column_type_match[name] = data_type
-
-        Logs.debug("adding cols: " + name + " " + data_type)
         postgres_data_type = self.type_to_postgres_type(data_type)
         "\"#{ name }\" #{ postgres_data_type }"
       end
@@ -95,8 +89,8 @@ module DataDuck
       data.each do |result|
         fields = []
         property_names.each_with_index do |property_name|
-          Logs.debug("checking cols: " + property_name + " " + @column_type_match[property_name])
-          quoted = @column_type_match[property_name] != "integer"
+          Logs.debug("checking cols: " + property_name + " " + @column_type_map[property_name])
+          quoted = @column_type_map[property_name] != "integer"
           value = result[property_name.to_sym]
           if value.nil?
             value = result[property_name.to_s]
@@ -244,8 +238,17 @@ module DataDuck
       self.query("DROP TABLE IF EXISTS zz_dataduck_old_#{ table.name }")
     end
 
+    def create_column_map(table)
+      @column_type_map = {}
+      table.output_schema.map do |name, data_type|
+        @column_type_map[name] = data_type
+      end
+
+    end
+
     def load_table!(table)
       DataDuck::Logs.info "Loading table #{ table.name }..."
+      create_column_map(table)
       file_path = self.save_table_to_csv(table)
       self.create_output_tables!(table)
       self.query(self.copy_query(table, file_path))
