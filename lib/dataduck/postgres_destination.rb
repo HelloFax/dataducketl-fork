@@ -273,8 +273,12 @@ module DataDuck
 
     def postprocess!(table)
       DataDuck::Logs.info "Vacuuming table #{ table.name }"
-      vacuum_type = table.indexes.length == 0 ? "FULL" : "REINDEX"
-      self.query("VACUUM #{ vacuum_type } #{ table.name }")
+      if table.indexes.length == 0
+        self.query("VACUUM FULL #{ table.name }")
+      else
+        self.query("VACUUM #{ table.name }")
+        self.query("REINDEX #{ table.name }")
+      end
     end
 
     def self.value_to_string(value)
