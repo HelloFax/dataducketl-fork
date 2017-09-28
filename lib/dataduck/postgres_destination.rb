@@ -11,8 +11,6 @@ module DataDuck
     attr_accessor :username
     attr_accessor :password
 
-
-
     def initialize(name, config)
       load_value('host', name, config)
       load_value('port', name, config)
@@ -48,7 +46,7 @@ module DataDuck
     def create_columns_on_data_warehouse!(table)
       columns = get_columns_in_data_warehouse(table.building_name)
       column_names = columns.map { |col| col[:name].to_s }
-      table.output_schema.map do |name, data_type|
+      table.create_schema.map do |name, data_type|
         if !column_names.include?(name.to_s)
           postgres_data_type = self.type_to_postgres_type(data_type)
           self.query("ALTER TABLE #{ table.building_name } ADD #{ name } #{ postgres_data_type }")
@@ -58,7 +56,7 @@ module DataDuck
 
     def create_table_query(table, table_name = nil)
       table_name ||= table.name
-      props_array = table.output_schema.map do |name, data_type|
+      props_array = table.create_schema.map do |name, data_type|
         postgres_data_type = self.type_to_postgres_type(data_type)
         "\"#{ name }\" #{ postgres_data_type }"
       end
@@ -248,12 +246,14 @@ module DataDuck
 
     def create_column_map(table)
       @column_type_map = {}
-      table.output_schema.map do |name, data_type|
+      table.create_schema.map do |name, data_type|
         @column_type_map["#{name}"] = "#{data_type}"
       end
     end
 
     def load_table!(table)
+      table.postgres_as_redshift = true
+
       DataDuck::Logs.info "Loading table #{ table.name }..."
       create_column_map(table)
       file_path = self.save_table_to_csv(table)
