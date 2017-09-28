@@ -11,6 +11,8 @@ module DataDuck
     attr_accessor :username
     attr_accessor :password
 
+
+
     def initialize(name, config)
       load_value('host', name, config)
       load_value('port', name, config)
@@ -21,6 +23,7 @@ module DataDuck
 
       @postgres_connection = nil
 
+      @column_type_match = {}
       super
     end
 
@@ -37,28 +40,30 @@ module DataDuck
       query_fragments = []
       query_fragments << "COPY #{ table.staging_name } (#{ properties_joined_string })"
       query_fragments << "FROM '#{ path }'"
-      # query_fragments << "CSV IGNOREHEADER 1 TRUNCATECOLUMNS ACCEPTINVCHARS EMPTYASNULL"
       query_fragments << "CSV"
-      # query_fragments << "DATEFORMAT 'auto'"
       return query_fragments.join(" ")
     end
 
     def create_columns_on_data_warehouse!(table)
+      @column_type_match = {}
       columns = get_columns_in_data_warehouse(table.building_name)
       column_names = columns.map { |col| col[:name].to_s }
       table.output_schema.map do |name, data_type|
+        @column_type_match[name] = data_type
         if !column_names.include?(name.to_s)
-          redshift_data_type = self.type_to_postgres_type(data_type)
-          self.query("ALTER TABLE #{ table.building_name } ADD #{ name } #{ redshift_data_type }")
+          postgres_data_type = self.type_to_postgres_type(data_type)
+          self.query("ALTER TABLE #{ table.building_name } ADD #{ name } #{ postgres_data_type }")
         end
       end
     end
 
     def create_table_query(table, table_name = nil)
+      @column_type_match = {}
       table_name ||= table.name
       props_array = table.output_schema.map do |name, data_type|
-        redshift_data_type = self.type_to_postgres_type(data_type)
-        "\"#{ name }\" #{ redshift_data_type }"
+        @column_type_match[name] = data_type
+        postgres_data_type = self.type_to_postgres_type(data_type)
+        "\"#{ name }\" #{ postgres_data_type }"
       end
       props_string = props_array.join(', ')
 
@@ -80,34 +85,31 @@ module DataDuck
     end
 
     def data_as_csv_string(data, property_names)
-      data_string_components = [] # join strings this way for now, could be optimized later
+      rows = [] # join strings this way for now, could be optimized later
 
-      data_string_components << property_names.join(',') # header column
-      data_string_components << "\n"
+      rows << property_names.join(',') # header column
+      rows << "\n"
 
       data.each do |result|
-        property_names.each_with_index do |property_name, index|
+        fields = []
+        property_names.each_with_index do |property_name|
+
+          quoted = @column_type_match[property_name] != "integer"
           value = result[property_name.to_sym]
           if value.nil?
             value = result[property_name.to_s]
           end
 
-          if index == 0
-            data_string_components << '"'
-          end
-
-          data_string_components << DataDuck::PostgresDestination.value_to_string(value)
-
-          if index == property_names.length - 1
-            data_string_components << '"'
+          if quoted
+            fields << '"' + DataDuck::PostgresDestination.value_to_string(value) + '"'
           else
-            data_string_components << '","'
+            fields << DataDuck::PostgresDestination.value_to_string(value)
           end
         end
-        data_string_components << "\n"
+        rows << fields.join(",")
       end
 
-      return data_string_components.join
+      return rows.join("\n")
     end
 
     def type_to_postgres_type(which_type)
