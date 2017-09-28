@@ -214,13 +214,15 @@ module DataDuck
 
     def save_table_to_csv(table)
       now_epoch = Time.now.to_i.to_s
-      filepath = "/tmp/#{ table.name.downcase }_#{ now_epoch }.csv"
+      filepath = "/opt/hsetl/tmp/#{ table.name.downcase }_#{ now_epoch }.csv"
 
       table_csv = self.data_as_csv_string(table.data, table.output_column_names)
 
       file = File.new(filepath, "w")
       file.write(table_csv)
       file.close
+
+      File.chmod(0777, filepath)
 
       filepath
 
