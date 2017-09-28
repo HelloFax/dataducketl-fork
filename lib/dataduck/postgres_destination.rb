@@ -91,21 +91,18 @@ module DataDuck
         property_names.each_with_index do |property_name|
           datatype = @column_type_map[property_name]
 
-          Logs.debug("datatype #{ datatype }")
           quoted = !@unquoted_types.include?(@column_type_map[property_name])
           value = result[property_name.to_sym]
           if value.nil?
-            if datatype == 'timestamp'
+            if %w{datetime boolean}.include?(datatype)
               quoted = false
-              value = 'NULL'
+              value = ''
             else
               value = result[property_name.to_s]
             end
           end
 
-          Logs.debug("b4 datatype #{datatype} value #{value}")
           value = DataDuck::PostgresDestination.value_to_string(value)
-          Logs.debug("datatype #{datatype} value #{value}")
 
           if quoted
             fields << '"' + value + '"'
