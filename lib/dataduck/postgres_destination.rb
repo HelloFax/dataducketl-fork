@@ -62,6 +62,8 @@ module DataDuck
       table_name ||= table.name
       props_array = table.output_schema.map do |name, data_type|
         @column_type_match[name] = data_type
+
+        Logs.debug("adding cols: " + name + " " + data_type)
         postgres_data_type = self.type_to_postgres_type(data_type)
         "\"#{ name }\" #{ postgres_data_type }"
       end
@@ -93,7 +95,7 @@ module DataDuck
       data.each do |result|
         fields = []
         property_names.each_with_index do |property_name|
-
+          Logs.debug("checking cols: " + property_name + " " + @column_type_match[property_name])
           quoted = @column_type_match[property_name] != "integer"
           value = result[property_name.to_sym]
           if value.nil?
