@@ -92,7 +92,7 @@ module DataDuck
           quoted = !@unquoted_types.include?(@column_type_map[property_name])
           value = result[property_name.to_sym]
           if value.nil?
-            if %w{datetime boolean}.include?(datatype)
+            if %w{datetime boolean date}.include?(datatype)
               quoted = false
               value = ''
             else
