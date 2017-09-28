@@ -90,6 +90,8 @@ module DataDuck
         fields = []
         property_names.each_with_index do |property_name|
           datatype = @column_type_map[property_name]
+
+          Logs.debug("datatype #{ datatype }")
           quoted = !@unquoted_types.include?(@column_type_map[property_name])
           value = result[property_name.to_sym]
           if value.nil?
@@ -101,13 +103,17 @@ module DataDuck
             end
           end
 
+          Logs.debug("b4 datatype #{datatype} value #{value}")
+          value = DataDuck::PostgresDestination.value_to_string(value)
+          Logs.debug("datatype #{datatype} value #{value}")
+
           if quoted
-            fields << '"' + DataDuck::PostgresDestination.value_to_string(value) + '"'
+            fields << '"' + value + '"'
           else
-            fields << DataDuck::PostgresDestination.value_to_string(value)
+            fields << value
           end
         end
-        rows << fields.join(",")
+        rows << fields.join(',')
       end
 
       return rows.join("\n")
