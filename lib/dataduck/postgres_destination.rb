@@ -89,7 +89,7 @@ module DataDuck
       data.each do |result|
         fields = []
         property_names.each_with_index do |property_name|
-          quoted = @unquoted_types.include?(@column_type_map[property_name])
+          quoted = !@unquoted_types.include?(@column_type_map[property_name])
           value = result[property_name.to_sym]
           if value.nil?
             value = result[property_name.to_s]
