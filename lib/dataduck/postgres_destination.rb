@@ -277,7 +277,7 @@ module DataDuck
         self.query("VACUUM FULL #{ table.name }")
       else
         self.query("VACUUM #{ table.name }")
-        self.query("REINDEX #{ table.name }")
+        self.query("REINDEX TABLE #{ table.name }")
       end
     end
 
