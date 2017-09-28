@@ -24,6 +24,7 @@ module DataDuck
       @postgres_connection = nil
 
       @column_type_map = {}
+      @unquoted_types = %w{integer float smallint bigint decimal numeric real double serial bigserial}
       super
     end
 
@@ -88,7 +89,7 @@ module DataDuck
       data.each do |result|
         fields = []
         property_names.each_with_index do |property_name|
-          quoted = ['integer','float','smallint','bigint','decimal','numeric','real','double','serial','bigserial'].include(@column_type_map[property_name])
+          quoted = @unquoted_types.include?(@column_type_map[property_name])
           value = result[property_name.to_sym]
           if value.nil?
             value = result[property_name.to_s]
