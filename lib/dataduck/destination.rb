@@ -12,6 +12,8 @@ module DataDuck
 
         if destination_type == "redshift"
           DataDuck.destinations[destination_name] = DataDuck::RedshiftDestination.new(destination_name, configuration)
+        elsif destination_type == "postgres"
+          DataDuck.destinations[destination_name] = DataDuck::PostgresDestination.new(destination_name, configuration)
         else
           raise ArgumentError.new("Unknown type '#{ destination_type }' for destination #{ destination_name }.")
         end
