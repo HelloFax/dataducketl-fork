@@ -255,7 +255,7 @@ module DataDuck
       table.is_postgres = true
 
       DataDuck::Logs.info "Loading table #{ table.name }..."
-      create_column_map(table)
+      self.create_column_map(table)
       file_path = self.save_table_to_csv(table)
       self.create_output_tables!(table)
       self.query(self.copy_query(table, file_path))
