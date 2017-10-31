@@ -38,6 +38,8 @@ module DataDuck
 
     def postprocess!(table)
       # e.g. vacuum or build indexes
+      # Log Metric
+      DataDuck::Logs.info "metrics: etl c etl_table_complete"
     end
 
     def self.destination(name, allow_nil = false)

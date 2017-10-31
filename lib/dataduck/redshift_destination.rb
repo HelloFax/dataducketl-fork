@@ -282,6 +282,7 @@ module DataDuck
       DataDuck::Logs.info "Vacuuming table #{ table.name }"
       vacuum_type = table.indexes.length == 0 ? "FULL" : "REINDEX"
       self.query("VACUUM #{ vacuum_type } #{ table.name }")
+      super(table)
     end
 
     def self.value_to_string(value)

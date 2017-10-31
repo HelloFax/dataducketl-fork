@@ -289,6 +289,7 @@ module DataDuck
         self.query("VACUUM #{ table.name }")
         self.query("REINDEX TABLE #{ table.name }")
       end
+      super(table)
     end
 
     def self.value_to_string(value)
