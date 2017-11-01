@@ -62,6 +62,7 @@ module DataDuck
 
       Logs.info("Finished ETL processing for pid #{ Process.pid }, #{ @tables.length - errored_tables.length } succeeded, #{ errored_tables.length } failed")
       if errored_tables.length > 0
+        DataDuck::Logs.info "metrics: etl c etl_load_table_error=#{errored_tables.length}"
         Logs.info("The following tables encountered errors: '#{ errored_tables.map(&:name).join("', '") }'")
       end
     end

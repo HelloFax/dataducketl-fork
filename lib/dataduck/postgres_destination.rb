@@ -218,7 +218,7 @@ module DataDuck
 
     def save_table_to_csv(table)
       now_epoch = Time.now.to_i.to_s
-      filepath = "/opt/hsetl/tmp/#{ table.name.downcase }_#{ now_epoch }.csv"
+      filepath = "/tmp/#{ table.name.downcase }_#{ now_epoch }.csv"
 
       table_csv = self.data_as_csv_string(table.data, table.output_column_names)
 
@@ -264,6 +264,8 @@ module DataDuck
         self.merge_from_staging!(table)
         self.drop_staging_table!(table)
       end
+
+      File.delete(file_path)
     end
 
     def recreate_table!(table)
@@ -289,7 +291,6 @@ module DataDuck
         self.query("VACUUM #{ table.name }")
         self.query("REINDEX TABLE #{ table.name }")
       end
-      super(table)
     end
 
     def self.value_to_string(value)
