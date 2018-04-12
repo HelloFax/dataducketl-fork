@@ -54,6 +54,8 @@ module DataDuck
     DataDuck.config = Util.deep_merge(DataDuck.config, loaded_config)
   end
 
+  DataDuck::Logs.load_config!
+
   create_module_var("sources", {})
   create_module_var("destinations", {})
   create_module_var("logger", Logger.new(STDOUT))
