@@ -9,7 +9,7 @@ pipeline {
         sh "sudo cp -rfp ${WORKSPACE}/. /opt/dataduck"
         sh "sudo chown -R ubuntu:root /opt/dataduck"
         sh "cd /opt/dataduck && ./jenkins/build.sh"
-        sh "cp /opt/dataduck/dataduck-0.7.0.gem ${WORKSPACE}"
+        sh "sudo cp /opt/dataduck/dataduck-0.7.0.gem ${WORKSPACE}"
         archiveArtifacts 'dataduck-0.7.0.gem'
       }
     }
