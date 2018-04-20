@@ -41,7 +41,7 @@ pipeline {
 
         // Publish the merged build-info to Artifactory
         server.upload spec: uploadSpec, buildInfo: buildInfo
-        server.publishBuildInfo buildInfo1
+        server.publishBuildInfo buildInfo
         server.upload(uploadSpec)
       }
     }
