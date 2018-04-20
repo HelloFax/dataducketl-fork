@@ -2,7 +2,7 @@ def uploadSpec = """{
   "files": [
     {
       "pattern": "/opt/dataduck/dataduck-0.7.0.gem",
-      "target": "gems-local/dataduck"
+      "target": "gems-local"
     }
   ]
 }"""
@@ -28,13 +28,6 @@ pipeline {
       script {
         // Obtain an Artifactory server instance, defined in Jenkins --> Manage:
         def server = Artifactory.server 'hellosign'
-
-        // Read the download and upload specs:
-//        def downloadSpec = readFile 'jenkins-examples/pipeline-examples/resources/props-download.json'
-//        def uploadSpec = readFile 'jenkins-examples/pipeline-examples/resources/props-upload.json'
-
-        // Download files from Artifactory:
-//        def buildInfo1 = server.download spec: downloadSpec
 
         // Upload files to Artifactory:
         def buildInfo = server.upload spec: uploadSpec
