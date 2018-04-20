@@ -37,7 +37,7 @@ pipeline {
 //        def buildInfo1 = server.download spec: downloadSpec
 
         // Upload files to Artifactory:
-//        def buildInfo2 = server.upload spec: uploadSpec
+        def buildInfo = server.upload spec: uploadSpec
 
         // Publish the merged build-info to Artifactory
         server.upload spec: uploadSpec, buildInfo: buildInfo
