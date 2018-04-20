@@ -15,3 +15,5 @@ sudo bundle exec rspec
 cat log/dataduck.log
 
 sudo gem build dataduck.gemspec
+
+chmod 666 dataduck-0.7.0.gem
