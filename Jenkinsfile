@@ -1,7 +1,7 @@
 def uploadSpec = """{
   "files": [
     {
-      "pattern": "/opt/dataduck/dataduck-1.0.1.gem",
+      "pattern": "/opt/dataduck/dataduck-99.0.1.gem",
       "target": "gems/gems/"
     }
   ]
@@ -18,8 +18,8 @@ pipeline {
         sh "sudo cp -rfp ${WORKSPACE}/. /opt/dataduck"
         sh "sudo chown -R ubuntu:root /opt/dataduck"
         sh "cd /opt/dataduck && ./jenkins/build.sh"
-        sh "sudo cp /opt/dataduck/dataduck-1.0.1.gem ${WORKSPACE}"
-        archiveArtifacts 'dataduck-1.0.1.gem'
+        sh "sudo cp /opt/dataduck/dataduck-99.0.1.gem ${WORKSPACE}"
+        archiveArtifacts 'dataduck-99.0.1.gem'
       }
     }
   }
