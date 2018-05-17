@@ -16,4 +16,4 @@ cat log/dataduck.log
 
 sudo gem build dataduck.gemspec
 
-sudo chmod 666 dataduck-0.7.0.gem
+sudo chmod 666 dataduck-1.0.1.gem
