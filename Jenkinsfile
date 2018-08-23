@@ -2,7 +2,7 @@ def uploadSpec = """{
   "files": [
     {
       "pattern": "/opt/dataduck/dataduck-99.0.1.gem",
-      "target": "gems/gems/"
+      "target": "gems-local/gems/"
     }
   ]
 }"""
