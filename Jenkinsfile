@@ -27,7 +27,7 @@ pipeline {
     success {
       script {
         // Obtain an Artifactory server instance, defined in Jenkins --> Manage:
-        def server = Artifactory.server 'hellosign'
+        def server = Artifactory.server 'artifactory'
 
         // Upload files to Artifactory:
         def buildInfo = server.upload spec: uploadSpec
