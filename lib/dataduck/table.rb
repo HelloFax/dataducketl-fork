@@ -253,6 +253,11 @@ module DataDuck
       self.output_schema.keys.map(&:to_s).sort
     end
 
+    # override in implementation to switch to vacuum immediately
+    def schedule_vacuum?
+      true
+    end
+
     def postprocess!(destination, options = {})
       destination.postprocess!(self)
     end

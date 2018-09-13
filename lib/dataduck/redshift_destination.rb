@@ -279,9 +279,22 @@ module DataDuck
     end
 
     def postprocess!(table)
+      if table.schedule_vacuum?
+        mark_for_vacuum(table)
+      else
+        vacuum_table(table)
+      end
+    end
+
+    def vacuum_table(table)
       DataDuck::Logs.info "Vacuuming table #{ table.name }"
       vacuum_type = table.indexes.length == 0 ? "FULL" : "REINDEX"
       self.query("VACUUM #{ vacuum_type } #{ table.name }")
+    end
+
+    def mark_for_vacuum(table)
+      DataDuck::Logs.info "Mark table for vacuum #{ table.name }"
+      self.query("INSERT INTO MASTER_VACUUM_REBUILD (table_name, inserted_at) VALUES ('#{ table.name }', CURRENT_TIMESTAMP);")
     end
 
     def self.value_to_string(value)

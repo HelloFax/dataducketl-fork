@@ -40,6 +40,14 @@ module DataDuck
       # e.g. vacuum or build indexes
     end
 
+    def vacuum_table!(table)
+      # vacuum table immediately
+    end
+
+    def mark_for_vacuum!(table)
+      # insert into vacuum rebuild table
+    end
+
     def self.destination(name, allow_nil = false)
       name = name.to_s
 
