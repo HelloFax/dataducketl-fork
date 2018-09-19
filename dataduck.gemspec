@@ -27,7 +27,7 @@ Gem::Specification.new do |spec|
   spec.add_runtime_dependency "mysql2", '~> 0.4'
   spec.add_runtime_dependency "aws-sdk", "~> 2.0"
   spec.add_runtime_dependency "typhoeus", "~> 0.8"
-  spec.add_runtime_dependency "oj", "~> 2.12"
+  spec.add_runtime_dependency "oj", "~> 3.6.10"
   spec.add_runtime_dependency "sequel-redshift"
   spec.add_runtime_dependency "whenever", "~> 0.9"
   spec.add_runtime_dependency "sentry-raven", '~>0.15'
