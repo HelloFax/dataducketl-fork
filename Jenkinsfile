@@ -24,7 +24,7 @@ pipeline {
       }
       steps {
         sh "./jenkins/build.sh ${BUILD_VERSION}"
-        archiveArtifacts 'dataduck-${BUILD_VERSION}.gem'
+        archiveArtifacts "dataduck-${BUILD_VERSION}.gem"
       }
     }
     stage("Push to artifactory") {
