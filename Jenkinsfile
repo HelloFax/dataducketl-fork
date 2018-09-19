@@ -8,12 +8,14 @@ def uploadSpec = """{
 }"""
 
 pipeline {
-  node {
-    label 'cibase'
-    customWorkspace '/opt/dataduck'
-  }
   environment {
     BUILD_VERSION = "99.0.3"
+  }
+  agent {
+    node {
+      label 'cibase'
+      customWorkspace '/opt/dataduck'
+    }
   }
   stages{
     stage("Dataduck Builder") {
