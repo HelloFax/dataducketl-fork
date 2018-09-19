@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+VERSION=$1
+
 PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
 
 sudo apt-get install ruby-rspec-core ruby ruby-dev libmysqlclient-dev libpq-dev -y
@@ -16,4 +18,4 @@ cat log/dataduck.log
 
 sudo gem build dataduck.gemspec
 
-sudo chmod 666 dataduck-99.0.2.gem
+sudo chmod 666 dataduck-${VERSION}.gem
