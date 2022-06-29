@@ -279,7 +279,7 @@ module DataDuck
     end
 
     def postprocess!(table)
-      if table.schedule_vacuum?
+      if table.respond_to?('schedule_vacuum') && table.schedule_vacuum?
         mark_for_vacuum(table)
       else
         vacuum_table(table)
@@ -307,7 +307,7 @@ module DataDuck
         string_value = value.to_s.scan(/[[:print:]]/).join
       end
 
-      string_value.gsub!('"', '""')
+      string_value.gsub('"', '""')
 
       return string_value
     end

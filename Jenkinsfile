@@ -9,7 +9,7 @@ def uploadSpec = """{
 
 pipeline {
   environment {
-    BUILD_VERSION = "99.0.3"
+    BUILD_VERSION = "99.0.4"
   }
   agent {
     node {
