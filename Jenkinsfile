@@ -13,7 +13,7 @@ pipeline {
   }
   agent {
     node {
-      label 'cibase'
+      label 'focal && etl && v1'
       customWorkspace '/opt/dataduck'
     }
   }
