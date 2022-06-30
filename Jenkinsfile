@@ -9,12 +9,11 @@ def uploadSpec = """{
 
 pipeline {
   environment {
-    BUILD_VERSION = "99.0.3"
+    BUILD_VERSION = "99.1.0"
   }
   agent {
     node {
       label 'focal && etl && v1'
-      customWorkspace '/opt/dataduck'
     }
   }
   stages{

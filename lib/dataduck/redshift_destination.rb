@@ -48,7 +48,7 @@ module DataDuck
       query_fragments << "CREDENTIALS 'aws_access_key_id=#{ self.aws_key };aws_secret_access_key=#{ self.aws_secret }'"
       query_fragments << "REGION '#{ self.s3_region }'"
       query_fragments << "CSV IGNOREHEADER 1 TRUNCATECOLUMNS ACCEPTINVCHARS EMPTYASNULL"
-      query_fragments << "DATEFORMAT 'auto'"
+      query_fragments << "DATEFORMAT 'auto' GZIP"
       return query_fragments.join(" ")
     end
 
@@ -72,9 +72,10 @@ module DataDuck
       props_string = props_array.join(', ')
 
       distribution_clause = table.distribution_key ? "DISTKEY(#{ table.distribution_key })" : ""
+      distribution_style_clause = table.distribution_style ? "DISTSTYLE #{ table.distribution_style }" : ""
       index_clause = table.indexes.length > 0 ? "INTERLEAVED SORTKEY (#{ table.indexes.join(',') })" : ""
 
-      "CREATE TABLE IF NOT EXISTS #{ table_name } (#{ props_string }) #{ distribution_clause } #{ index_clause }"
+      "CREATE TABLE IF NOT EXISTS #{ table_name } (#{ props_string }) #{ distribution_clause } #{ distribution_style_clause } #{ index_clause }"
     end
 
     def create_output_tables!(table)
@@ -203,7 +204,7 @@ module DataDuck
       Logs.debug("SQL executing on #{ self.name }:\n  " + sql)
       begin
         self.connection[sql].map { |elem| elem }
-      rescue Exception => err
+      rescue => err
         if err.to_s.include?("Check 'stl_load_errors' system table for details")
           self.raise_stl_load_error!
         else
@@ -226,16 +227,24 @@ module DataDuck
       self.query("SELECT DISTINCT(tablename) AS name FROM pg_table_def WHERE schemaname = ANY (CURRENT_SCHEMAS(false)) ORDER BY name").map { |item| item[:name] }
     end
 
+    def gzip(data)
+      sio = StringIO.new
+      gz = Zlib::GzipWriter.new(sio)
+      gz.write(data)
+      gz.close
+      sio.string
+    end
+
     def upload_table_to_s3!(table)
       now_epoch = Time.now.to_i.to_s
-      filepath = "pending/#{ table.name.downcase }_#{ now_epoch }.csv"
+      filepath = "pending/#{ table.name.downcase }_#{ now_epoch }.csv.gz"
 
-      table_csv = self.data_as_csv_string(table.data, table.output_column_names)
+      table_csv = self.gzip(self.data_as_csv_string(table.data, table.output_column_names))
 
       s3_obj = S3Object.new(filepath, table_csv, self.aws_key, self.aws_secret,
           self.s3_bucket, self.s3_region)
       s3_obj.upload!
-      return s3_obj
+      s3_obj
     end
 
     def finish_fully_reloading_table!(table)
@@ -254,7 +263,8 @@ module DataDuck
       DataDuck::Logs.info "Loading table #{ table.name }..."
       s3_object = self.upload_table_to_s3!(table)
       self.create_output_tables!(table)
-      self.query(self.copy_query(table, s3_object.s3_path))
+      query_to_run = self.copy_query(table, s3_object.s3_path)
+      self.query(query_to_run)
       s3_object.delete!
 
       if table.staging_name != table.building_name
@@ -267,7 +277,7 @@ module DataDuck
       DataDuck::Logs.info "Recreating table #{ table.name }..."
 
       if !self.table_names.include?(table.name)
-        raise Exception.new("Table #{ table.name } doesn't exist on the Redshift database, so it can't be recreated. Did you want to use `dataduck create #{ table.name }` instead?")
+        raise "Table #{ table.name } doesn't exist on the Redshift database, so it can't be recreated. Did you want to use `dataduck create #{ table.name }` instead?"
       end
 
       recreating_temp_name = "zz_dataduck_recreating_#{ table.name }"

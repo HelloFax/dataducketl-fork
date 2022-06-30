@@ -11,8 +11,6 @@ module DataDuck
     attr_accessor :data
     attr_accessor :errors
 
-    attr_accessor :is_postgres
-
     def self.transforms(transformation_name)
       self.actions ||= []
       self.actions << [:transform, transformation_name]
@@ -59,8 +57,8 @@ module DataDuck
 
     def check_table_valid!
       if !self.batch_size.nil?
-        raise Exception.new("Table #{ self.name }'s batch_size must be > 0") unless self.batch_size > 0
-        raise Exception.new("Table #{ self.name } has batch_size defined but no extract_by_column") if self.extract_by_column.nil?
+        raise "Table #{ self.name }'s batch_size must be > 0" unless self.batch_size > 0
+        raise "Table #{ self.name } has batch_size defined but no extract_by_column" if self.extract_by_column.nil?
       end
     end
 
@@ -70,6 +68,10 @@ module DataDuck
       else
         nil
       end
+    end
+
+    def distribution_style
+      nil
     end
 
     def etl!(destinations, options = {})
@@ -89,12 +91,17 @@ module DataDuck
         destination.drop_staging_table!(self)
       end
 
+      data_processed = false
       batch_number = 0
       while batch_number < 1_000
         batch_number += 1
         self.extract!(destination, options)
-        self.transform!
-        self.load!(destination)
+        if self.data.length > 0
+          self.transform!
+          self.data.compact!
+          self.load!(destination) if self.data.length > 0
+          data_processed = true
+        end
 
         if self.batch_size.nil?
           break
@@ -110,11 +117,15 @@ module DataDuck
 
       self.data = []
 
-      if self.should_fully_reload?
-        destination.finish_fully_reloading_table!(self)
-      end
+      if data_processed
+        if self.should_fully_reload?
+          destination.finish_fully_reloading_table!(self)
+        end
 
-      self.postprocess!(destination, options)
+        self.postprocess!(destination, options)
+      else
+        DataDuck::Logs.info "No data extracted for table #{ self.name }"
+      end
     end
 
     def extract!(destination = nil, options = {})
@@ -139,12 +150,11 @@ module DataDuck
 
       extract_part = ""
       limit_part = self.limit_clause
-      building_name = self.building_name_override || self.building_name
 
       if self.extract_by_column
-        if destination.table_names.include?(building_name)
+        if destination.table_names.include?(self.building_name)
           extract_by_column_without_table = self.extract_by_column.include?(".") ? self.extract_by_column.split(".").last : self.extract_by_column
-          extract_by_value = destination.query("SELECT MAX(#{ extract_by_column_without_table }) AS val FROM #{ building_name }").first
+          extract_by_value = destination.query("SELECT MAX(#{ extract_by_column_without_table }) AS val FROM #{ self.building_name }").first
           extract_by_value = extract_by_value.nil? ? nil : extract_by_value[:val]
 
           extract_part = self.extract_by_clause(extract_by_value)
@@ -160,7 +170,8 @@ module DataDuck
 
     def extract_by_clause(value)
       if value
-        "WHERE #{ self.extract_by_column } >= '#{ value }'"
+        operator = self.should_fully_reload? ? '>' : '>='
+        "WHERE #{ self.extract_by_column } #{ operator } '#{ value }'"
       else
         ""
       end
@@ -210,19 +221,11 @@ module DataDuck
     end
 
     def autogenerate_identity?
-      true
-    end
-
-    def is_postgres?
-      self.is_postgres
+      false
     end
 
     def building_name
       self.should_fully_reload? ? self.staging_name : self.name
-    end
-
-    def building_name_override
-      nil
     end
 
     def staging_name
@@ -231,11 +234,7 @@ module DataDuck
 
     def create_schema
       if self.autogenerate_identity?
-        if self.is_postgres?
-          Util.deep_merge(output_schema, {redshift_id: 'SERIAL'}) # Postgres acting as redshift for etl testing
-        else
-          Util.deep_merge(output_schema, {redshift_id: 'bigint identity(1, 1)'}) # Redshift only
-        end
+        Util.deep_merge(output_schema, {dataduck_identity: 'bigint identity(1, 1)'}) # Redshift only
       else
         output_schema
       end

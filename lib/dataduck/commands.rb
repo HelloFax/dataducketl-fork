@@ -2,6 +2,7 @@ require 'erb'
 require 'yaml'
 require 'fileutils'
 require 'typhoeus'
+require 'io/console'
 
 module DataDuck
   class Commands
@@ -33,7 +34,7 @@ module DataDuck
     end
 
     def self.acceptable_commands
-      ['c', 'console', 'd', 'dbconsole', 'etl', 'quickstart', 'recreate', 'show', 'test']
+      ['c', 'console', 'd', 'dbconsole', 'etl', 'quickstart', 'recreate', 'show']
     end
 
     def self.route_command(args)
@@ -49,7 +50,7 @@ module DataDuck
 
       begin
         DataDuck::Commands.public_send(command, *args[1..-1])
-      rescue Exception => err
+      rescue => err
         DataDuck::Logs.error(err)
       end
     end
@@ -93,12 +94,6 @@ module DataDuck
       which_database.dbconsole
     end
 
-    def self.test(*table_names_underscore)
-      # NOTE:
-      DataDuck::Destination.only_destination.schema = "test"
-      self.etl(table_names_underscore)
-    end
-
     def self.etl(*table_names_underscore)
       if table_names_underscore.length == 0
         puts "You need to specify a table name or 'all'. Usage: dataduck etl all OR dataduck etl my_table_name"
@@ -106,19 +101,18 @@ module DataDuck
       end
 
       only_destination = DataDuck::Destination.only_destination
-      source_directory = only_destination.schema == "test" ? "test_tables" : "tables"
 
+      etl = nil
       if table_names_underscore.length == 1 && table_names_underscore[0] == "all"
         etl = ETL.new(destinations: [only_destination], autoload_tables: true)
-        etl.process!
       else
         tables = []
         table_names_underscore.each do |table_name|
           table_name_camelized = DataDuck::Util.underscore_to_camelcase(table_name)
-          require DataDuck.project_root + "/src/#{ source_directory }/#{ table_name }.rb"
+          require DataDuck.project_root + "/src/tables/#{ table_name }.rb"
           table_class = Object.const_get(table_name_camelized)
           if !(table_class <= DataDuck::Table)
-            raise Exception.new("Table class #{ table_name_camelized } must inherit from DataDuck::Table")
+            raise "Table class #{ table_name_camelized } must inherit from DataDuck::Table"
           end
           table = table_class.new
           tables << table
@@ -128,7 +122,11 @@ module DataDuck
             autoload_tables: false,
             tables: tables
         })
-        etl.process!
+      end
+      etl.process!
+
+      if etl.errored?
+        exit(1)
       end
     end
 
@@ -142,7 +140,7 @@ module DataDuck
       require DataDuck.project_root + "/src/tables/#{ table_name }.rb"
       table_class = Object.const_get(table_name_camelized)
       if !(table_class <= DataDuck::Table)
-        raise Exception.new("Table class #{ table_name_camelized } must inherit from DataDuck::Table")
+        raise "Table class #{ table_name_camelized } must inherit from DataDuck::Table"
       end
       table = table_class.new
       table.recreate!(DataDuck::Destination.only_destination)
@@ -164,7 +162,7 @@ module DataDuck
         require DataDuck.project_root + "/src/tables/#{ table_name }.rb"
         table_class = Object.const_get(table_name_camelized)
         if !(table_class <= DataDuck::Table)
-          raise Exception.new("Table class #{ table_name_camelized } must inherit from DataDuck::Table")
+          raise "Table class #{ table_name_camelized } must inherit from DataDuck::Table"
         end
 
         table = table_class.new
@@ -246,7 +244,10 @@ module DataDuck
       puts "Connection successful. Detected #{ table_names.length } tables."
       puts "Creating scaffolding..."
       table_names.each do |table_name|
-        DataDuck::Commands.quickstart_create_table(table_name, db_source)
+        begin
+          DataDuck::Commands.quickstart_create_table(table_name, db_source)
+        rescue
+        end
       end
 
       config_obj = {

@@ -13,11 +13,13 @@ module DataDuck
 
     attr_accessor :destinations
     attr_accessor :tables
+    attr_accessor :errored_tables
 
     def initialize(options = {})
       self.class.destinations ||= []
       @tables = options[:tables] || []
       @destinations = options[:destinations] || []
+      @errored_tables = []
 
       @autoload_tables = options[:autoload_tables].nil? ? true : options[:autoload_tables]
       if @autoload_tables
@@ -31,6 +33,10 @@ module DataDuck
           end
         end
       end
+    end
+
+    def errored?
+      @errored_tables.length > 0
     end
 
     def process!
