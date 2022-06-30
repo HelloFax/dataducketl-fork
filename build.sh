@@ -15,6 +15,11 @@ mkdir -p log
 touch log/dataduck.log
 
 sudo bundle exec rspec
+resie=${?}
+echo $resie
+if [[ $resie != 0 ]]; then
+  exit 1
+fi
 
 cat log/dataduck.log
 
