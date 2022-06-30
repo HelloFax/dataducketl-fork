@@ -32,9 +32,9 @@ pipeline {
       }
     }
     stage("Push to artifactory") {
-      when{
-        branch 'master'
-      }
+//      when{
+//        branch 'master'
+//      }
       steps {
         script {
           // Obtain an Artifactory server instance, defined in Jenkins --> Manage:
