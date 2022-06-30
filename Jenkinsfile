@@ -19,13 +19,14 @@ pipeline {
   stages{
     stage("Dataduck Builder") {
       steps {
-        build_ok = sh(returnStatus: true, script: "./jenkins/build.sh ${BUILD_VERSION}")
-        if (build_ok == 0) {
-          archiveArtifacts "dataduck-${BUILD_VERSION}.gem"
-        } else {
-          currentBuild.result = 'FAILURE'
+        script {
+          build_ok = sh(returnStatus: true, script: "./jenkins/build.sh ${BUILD_VERSION}")
+          if (build_ok == 0) {
+            archiveArtifacts "dataduck-${BUILD_VERSION}.gem"
+          } else {
+            currentBuild.result = 'FAILURE'
+          }
         }
-
       }
     }
     stage("Push to artifactory") {
