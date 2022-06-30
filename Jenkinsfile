@@ -1,7 +1,7 @@
 def uploadSpec = """{
   "files": [
     {
-      "pattern": "dataduck/dataduck-*.gem",
+      "pattern": "dataduck-*.gem",
       "target": "gems-local/gems/"
     }
   ]
@@ -20,7 +20,7 @@ pipeline {
     stage("Dataduck Builder") {
       steps {
         script {
-          sh "rm -f dataduck/*.gem"
+          sh "rm -f datatuck-*.gem"
           def build_ok = sh(returnStatus: true, script: "./build.sh ${BUILD_VERSION}")
           echo "build returned $build_ok"
           if (build_ok == 0) {
