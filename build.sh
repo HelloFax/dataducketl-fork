@@ -4,7 +4,8 @@ VERSION=$1
 WORKSPACE=$2
 
 PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
-
+sudo rm -f datatuck-*.gem
+# bundler execution recommended this
 sudo git config --global --add safe.directory ${WORKSPACE}
 
 ls -la
