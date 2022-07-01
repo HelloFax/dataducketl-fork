@@ -4,9 +4,16 @@ VERSION=$1
 WORKSPACE=$2
 
 PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
-sudo rm -f datatuck-*.gem
 # bundler execution recommended this
+
+echo "setup..."
 sudo git config --global --add safe.directory ${WORKSPACE}
+
+# rspec will be looking for this
+mkdir -p log
+touch log/dataduck.log
+
+sudo rm -f "${WORKSPACE}/datatuck-*.gem"
 
 ls -la
 
@@ -14,12 +21,7 @@ sudo apt-get install ruby-rspec-core ruby ruby-dev libmysqlclient-dev libpq-dev 
 sudo gem install bundler
 sudo bundle install
 
-# rspec will be looking for this
-echo "make logs dir"
-mkdir -p log
-touch log/dataduck.log
-
-echo "exec spec"
+echo "test..."
 sudo bundle exec rspec
 resie=${?}
 echo $resie
@@ -29,7 +31,7 @@ fi
 
 cat log/dataduck.log
 
-echo "build"
+echo "build..."
 sudo gem build dataduck.gemspec
 
 sudo chmod 666 dataduck-${VERSION}.gem
