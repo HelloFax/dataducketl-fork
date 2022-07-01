@@ -13,6 +13,7 @@ sudo git config --global --add safe.directory ${WORKSPACE}
 mkdir -p log
 touch log/dataduck.log
 
+# this delete is not working for some reason
 sudo rm -f "${WORKSPACE}/datatuck-*.gem"
 
 ls -la
