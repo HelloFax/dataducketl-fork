@@ -9,7 +9,7 @@ def uploadSpec = """{
 
 pipeline {
   environment {
-    BUILD_VERSION = "99.1.0"
+    BUILD_VERSION = "99.1.1"
   }
   agent {
     node {
@@ -20,7 +20,8 @@ pipeline {
     stage("Dataduck Builder") {
       steps {
         script {
-          sh "git config --global --add safe.directory /var/tmp/jenkins/workspace/ducketl-fork_changes_from_source"
+          sh "echo ${WORKSPACE}"
+          sh "git config --global --add safe.directory ${WORKSPACE}"
           // bundler execution recommended this
           sh "rm -f datatuck-*.gem"
           def build_ok = sh(returnStatus: true, script: "./build.sh ${BUILD_VERSION}")
