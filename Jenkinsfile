@@ -9,7 +9,7 @@ def uploadSpec = """{
 
 pipeline {
   environment {
-    BUILD_VERSION = "99.1.4"
+    BUILD_VERSION = "99.1.5"
   }
   agent {
     node {
@@ -31,9 +31,9 @@ pipeline {
       }
     }
     stage("Push to artifactory") {
-//      when{
-//        branch 'master'
-//      }
+      when{
+        branch 'master'
+      }
       steps {
         script {
           // Obtain an Artifactory server instance, defined in Jenkins --> Manage:

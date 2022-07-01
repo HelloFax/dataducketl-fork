@@ -2,6 +2,6 @@ require 'spec_helper'
 
 describe DataDuck do
   it 'has the right version' do
-    expect(DataDuck::VERSION).to eq('99.1.4')
+    expect(DataDuck::VERSION).to eq('99.1.5')
   end
 end
