@@ -57,12 +57,12 @@ module DataDuck
         table = table_or_class.kind_of?(DataDuck::Table) ? table_or_class : table_or_class.new
         Logs.info("Processing table '#{ table.name }'...")
         begin
-          last_row = redshift.query("INSERT INTO etl_event_log (name, event, timestamp_start, job_status, error_code) VALUES ('#{ table.name }', 'load_table', CURRENT_TIMESTAMP,'IN-PROGRESS',NULL); SELECT id, timestamp_start FROM etl_event_log WHERE name = '#{ table.name }' ORDER BY id DESC LIMIT 1")[0] # Added to gem per BI-560
+          last_row = redshift.query("INSERT INTO etl_event_log_focal (name, event, timestamp_start, job_status, error_code) VALUES ('#{ table.name }', 'load_table', CURRENT_TIMESTAMP,'IN-PROGRESS',NULL); SELECT id, timestamp_start FROM etl_event_log_focal WHERE name = '#{ table.name }' ORDER BY id DESC LIMIT 1")[0] # Added to gem per BI-560
 	        table.etl!(destinations_to_use)
-          redshift.query("UPDATE etl_event_log SET timestamp_end = CURRENT_TIMESTAMP,job_status = 'COMPLETED',error_code=0, runtime_in_s = EXTRACT(EPOCH FROM (CURRENT_TIMESTAMP - '#{ last_row[:timestamp_start] }')) WHERE id = #{ last_row[:id] }") # Added to gem per BI-560
+          redshift.query("UPDATE etl_event_log_focal SET timestamp_end = CURRENT_TIMESTAMP,job_status = 'COMPLETED',error_code=0, runtime_in_s = EXTRACT(EPOCH FROM (CURRENT_TIMESTAMP - '#{ last_row[:timestamp_start] }')) WHERE id = #{ last_row[:id] }") # Added to gem per BI-560
         rescue Exception => err
           Logs.error("Error while processing table '#{ table.name }': #{ err.to_s }\n#{ err.backtrace.join("\n") }")
-          redshift.query("UPDATE etl_event_log SET timestamp_end = CURRENT_TIMESTAMP,job_status = 'FAILED',error_code='#{ err.to_s.gsub("'", "")}', runtime_in_s = EXTRACT(EPOCH FROM (CURRENT_TIMESTAMP - '#{ last_row[:timestamp_start] }')) WHERE id = #{ last_row[:id] }") # Added to gem per BI-560
+          redshift.query("UPDATE etl_event_log_focal SET timestamp_end = CURRENT_TIMESTAMP,job_status = 'FAILED',error_code='#{ err.to_s.gsub("'", "")}', runtime_in_s = EXTRACT(EPOCH FROM (CURRENT_TIMESTAMP - '#{ last_row[:timestamp_start] }')) WHERE id = #{ last_row[:id] }") # Added to gem per BI-560
           errored_tables << table
         end
       end
