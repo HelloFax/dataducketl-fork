@@ -48,7 +48,7 @@ module DataDuck
       query_fragments << "CREDENTIALS 'aws_access_key_id=#{ self.aws_key };aws_secret_access_key=#{ self.aws_secret }'"
       query_fragments << "REGION '#{ self.s3_region }'"
       query_fragments << "CSV IGNOREHEADER 1 TRUNCATECOLUMNS ACCEPTINVCHARS EMPTYASNULL"
-      query_fragments << "DATEFORMAT 'auto' GZIP"
+      query_fragments << "DATEFORMAT 'auto'"
       return query_fragments.join(" ")
     end
 
@@ -227,19 +227,19 @@ module DataDuck
       self.query("SELECT DISTINCT(tablename) AS name FROM pg_table_def WHERE schemaname = ANY (CURRENT_SCHEMAS(false)) ORDER BY name").map { |item| item[:name] }
     end
 
-    def gzip(data)
-      sio = StringIO.new
-      gz = Zlib::GzipWriter.new(sio)
-      gz.write(data)
-      gz.close
-      sio.string
-    end
+    # def gzip(data)
+    #   sio = StringIO.new
+    #   gz = Zlib::GzipWriter.new(sio)
+    #   gz.write(data)
+    #   gz.close
+    #   sio.string
+    # end
 
     def upload_table_to_s3!(table)
       now_epoch = Time.now.to_i.to_s
-      filepath = "pending/#{ table.name.downcase }_#{ now_epoch }.csv.gz"
+      filepath = "pending/#{ table.name.downcase }_#{ now_epoch }.csv"
 
-      table_csv = self.gzip(self.data_as_csv_string(table.data, table.output_column_names))
+      table_csv = self.data_as_csv_string(table.data, table.output_column_names)
 
       s3_obj = S3Object.new(filepath, table_csv, self.aws_key, self.aws_secret,
           self.s3_bucket, self.s3_region)
