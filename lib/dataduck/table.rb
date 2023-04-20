@@ -221,7 +221,7 @@ module DataDuck
     end
 
     def autogenerate_identity?
-      false
+      true
     end
 
     def building_name
@@ -234,7 +234,7 @@ module DataDuck
 
     def create_schema
       if self.autogenerate_identity?
-        Util.deep_merge(output_schema, {dataduck_identity: 'bigint identity(1, 1)'}) # Redshift only
+        Util.deep_merge(output_schema, {redshift_id: 'bigint identity(1, 1)'}) # Redshift only
       else
         output_schema
       end
