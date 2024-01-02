@@ -19,7 +19,7 @@ sudo rm -f "${WORKSPACE}/datatuck-*.gem"
 ls -la
 
 sudo apt-get install ruby-rspec-core ruby ruby-dev libmysqlclient-dev libpq-dev libffi-dev build-essential -y
-sudo gem install bundler
+sudo gem install bundler -v 2.4.22
 sudo bundle install
 
 echo "test..."
